@@ -22,8 +22,8 @@ Built on an idea by Andrej Karpathy ([original gist](https://gist.github.com/kar
 
 | Question type | Wiki score | RAG score | Δ |
 |---|---|---|---|
-| Synthesis | 7.0 / 10 | 4.5 / 10 | **+2.5** |
-| Lookup | 7.0 / 10 | 10.0 / 10 | -3.0 |
+| Synthesis | 6.5 / 10 | 4.0 / 10 | **+2.5** |
+| Lookup | 7.3 / 10 | 10.0 / 10 | -2.7 |
 
 Wiki outperforms BM25 RAG by +2.5 points on synthesis questions requiring multi-source reasoning. RAG wins on simple factual lookups — expected, and acceptable. Citation accuracy: 100% across all queries.
 
