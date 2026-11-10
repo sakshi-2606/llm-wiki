@@ -206,7 +206,7 @@ async def run_tests():
     print(f"✓ IngestResult correct: {result.title}, {len(result.pages_written)} pages")
 
     # Source page written
-    source_page = settings.wiki_path / "sources" / f"2026-04-06_attention-is-all-you-need.md"
+    source_page = settings.wiki_path / "sources" / f"{result.source_page_slug}.md"
     assert source_page.exists(), f"Source page not written: {source_page}"
     content = source_page.read_text()
     assert "__HASH__" not in content, "Hash placeholder not replaced"
