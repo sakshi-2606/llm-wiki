@@ -310,7 +310,7 @@ async def _llm_complete(
     response = await client.messages.create(
         model=settings.llm_model,
         max_tokens=settings.max_tokens,
-        temperature=temperature,
+        # temperature=temperature,
         system=system if system else NOT_GIVEN,
         messages=[{"role": "user", "content": prompt}],
     )
@@ -332,7 +332,7 @@ async def _llm_stream(
     async with client.messages.stream(
         model=settings.llm_model,
         max_tokens=settings.max_tokens,
-        temperature=temperature,
+        # temperature=temperature,
         system=system if system else NOT_GIVEN,
         messages=[{"role": "user", "content": prompt}],
     ) as stream:
