@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncGenerator, Literal
 
-from openai import AsyncOpenAI
+from anthropic import AsyncAnthropic, NOT_GIVEN
 
 from config import settings
 from provenance import check_staleness, get_stale_summary
@@ -101,8 +101,8 @@ class LintReport:
 
 # ── OpenAI client ──────────────────────────────────────────────────────────────
 
-def _client() -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=settings.openai_api_key)
+def _client() -> AsyncAnthropic:
+    return AsyncAnthropic(api_key=settings.anthropic_api_key)
 
 
 # ── LLM helpers ────────────────────────────────────────────────────────────────
@@ -113,13 +113,14 @@ async def _llm_complete(prompt: str, temperature: float, system: str | None = No
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    response = await client.chat.completions.create(
+    response = await client.messages.create(
         model=settings.llm_model,
-        messages=messages,
-        temperature=temperature,
         max_tokens=settings.max_tokens,
+        # temperature=temperature,
+        system=system if system else NOT_GIVEN,
+        messages=[{"role": "user", "content": prompt}],
     )
-    return response.choices[0].message.content or ""
+    return response.content[0].text if response.content else ""
 
 
 def _parse_json_response(text: str) -> dict | list:

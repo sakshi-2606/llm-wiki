@@ -4,6 +4,7 @@ aiosignal==1.4.0
 altair==6.0.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
+anthropic==2.6.0
 anyio==4.13.0
 appdirs==1.4.4
 attrs==26.1.0
@@ -50,7 +51,6 @@ langchain==1.2.15
 langchain-classic==1.0.3
 langchain-community==0.4.1
 langchain-core==1.2.26
-langchain-openai==1.1.12
 langchain-text-splitters==1.1.1
 langgraph==1.1.6
 langgraph-checkpoint==4.0.1
@@ -69,7 +69,6 @@ narwhals==2.18.1
 nest-asyncio==1.6.0
 networkx==3.6.1
 numpy==2.4.4
-openai==2.30.0
 orjson==3.11.8
 ormsgpack==1.12.2
 packaging==26.0

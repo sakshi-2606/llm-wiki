@@ -27,11 +27,11 @@ class Settings(BaseSettings):
     )
 
     # ── LLM ───────────────────────────────────────────────────────────────────
-    openai_api_key: str = Field(..., alias="OPENAI_API_KEY")
+    anthropic_api_key: str = Field(..., alias="ANTHROPIC_API_KEY")
 
     # Model used for all wiki operations.
     # GPT-4o is the default — high context window matters for multi-page reads.
-    llm_model: str = Field("gpt-4o", alias="LLM_MODEL")
+    llm_model: str = Field("claude-sonnet-4-5-20250929", alias="LLM_MODEL")
 
     # Temperature: low for ingest/lint (factual, precise), higher for query
     # (synthesis benefits from a little more creativity). Override per-call.
