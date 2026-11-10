@@ -1,0 +1,35 @@
+Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
+
+Authors: Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, Sebastian Riedel, Douwe Kiela.
+Origin: Facebook AI Research (FAIR).
+Published: 2020 (NeurIPS 2020).
+Type: paper
+
+Overview
+
+Retrieval-Augmented Generation (RAG) is a framework introduced by Patrick Lewis and colleagues at Facebook AI Research in 2020. It combines a pre-trained sequence-to-sequence language model with a retrieval component that fetches relevant documents from an external corpus at inference time. The central idea is that a model should not have to store all world knowledge in its weights; instead, it can look knowledge up when needed.
+
+Parametric and non-parametric memory
+
+RAG's defining contribution is the explicit separation of two kinds of memory. The parametric memory is the knowledge stored implicitly in the weights of the pre-trained generator — in the original work, a BART sequence-to-sequence model. The non-parametric memory is an external store: a dense vector index of a large document collection (the original paper used a Wikipedia dump), accessed through a neural retriever based on Dense Passage Retrieval (DPR).
+
+At inference, the retriever encodes the input query, searches the dense index for the most relevant passages, and the generator conditions on both the query and those retrieved passages to produce its output. Because the non-parametric store can be inspected and swapped, the model's knowledge is made explicit and addressable rather than locked inside opaque weights.
+
+How it works, step by step
+
+1. The query is encoded into a dense vector by the question encoder.
+2. The retriever performs maximum inner-product search over the document index and returns the top-k passages.
+3. The generator (BART) is conditioned on the query together with the retrieved passages.
+4. The output is produced by marginalising over the retrieved documents, so the final answer is grounded in retrieved evidence.
+
+Key claims
+
+- RAG was introduced by Lewis et al. (2020) at Facebook AI Research.
+- It couples parametric memory (a seq2seq generator) with non-parametric memory (a dense retrievable index).
+- On open-domain question answering benchmarks, RAG set state-of-the-art results at the time of publication.
+- Because every generation is conditioned on retrieved source passages, outputs are grounded in evidence, which strongly reduces unsupported fabrication compared with a closed-book model of similar size.
+- Knowledge can be revised by editing the external index, without retraining the generator.
+
+Significance
+
+RAG reframed knowledge-intensive NLP around retrieval. Rather than scaling parameters to memorise more facts, it showed that a modest generator plus a good retriever and a large external corpus could outperform much larger closed-book models on tasks that require specific factual recall.

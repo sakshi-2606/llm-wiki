@@ -1,0 +1,31 @@
+Why Teams Reach for RAG: Retrieval-Augmented Generation in Practice
+
+Type: article
+
+Standard large language models answer from parametric memory alone — everything they "know" is frozen into their weights at training time. That design has two practical problems: the knowledge goes stale the moment training ends, and the model cannot tell you where an answer came from. Retrieval-Augmented Generation (RAG) addresses both by giving the model a non-parametric memory it reads from at inference time.
+
+The core advantage over a standard language model
+
+The single biggest advantage of RAG over a standard language model is that knowledge becomes updatable without retraining. In a closed-book model, incorporating a new fact means fine-tuning or retraining — expensive and slow. In a RAG system, you update the external index: add, remove, or correct documents, and the model's answers change immediately. The expensive generator stays fixed; only the cheap, swappable store changes.
+
+Grounding and provenance
+
+Because a RAG generator conditions on retrieved passages, its answers are grounded in specific source documents. This yields two things a plain LM cannot offer. First, provenance: the system can cite which passages supported an answer, which matters enormously for enterprise and research use. Second, grounding tends to reduce hallucination, because the model is steered toward content that actually appears in the retrieved evidence rather than inventing plausible-sounding text from parametric memory.
+
+Parametric versus non-parametric, restated
+
+It helps to keep the two memories straight. Parametric memory is what the model learned during training and carries in its weights — good for fluency, grammar, and general reasoning. Non-parametric memory is the external corpus the retriever searches — good for specific, current, verifiable facts. RAG's power comes from using each for what it is best at: the generator for language, the index for knowledge.
+
+When RAG is the right tool
+
+- Question answering over a corpus that changes often (documentation, policies, news).
+- Any application that must cite sources or show provenance.
+- Domains where retraining a model on new facts would be too slow or costly.
+- Settings where a smaller, cheaper generator plus a good index beats a giant closed-book model on factual recall.
+
+Key claims
+
+- The chief advantage of RAG over a standard LM is that its knowledge can be updated by changing the external index, with no retraining of the generator.
+- RAG answers are grounded in retrieved passages, which enables citation and reduces (though does not remove) hallucination.
+- Parametric memory handles language and reasoning; non-parametric memory handles specific, current facts.
+- RAG is especially suited to corpora that change frequently and to applications that require provenance.

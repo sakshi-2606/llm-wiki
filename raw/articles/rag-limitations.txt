@@ -1,0 +1,37 @@
+The Limits of Retrieval-Augmented Generation
+
+Type: article
+
+Retrieval-Augmented Generation is often described as a cure for hallucination and stale knowledge. It helps with both, but it is not a solved problem, and a realistic account of its failure modes matters as much as its strengths.
+
+Retrieval quality is the ceiling
+
+A RAG system can only be as good as what its retriever returns. If the relevant passage is not in the index, or the retriever ranks it below the cut-off, the generator is left to fall back on parametric memory — exactly the closed-book behaviour RAG was meant to avoid. "Garbage in, garbage out" applies sharply: a weak retriever or a poorly chunked corpus produces confident, well-written, wrong answers.
+
+Hallucination is reduced, not eliminated
+
+This is the key tension with the optimistic framing. Grounding the generator on retrieved passages lowers the rate of unsupported fabrication, but it does not remove it. The generator can still ignore or misread the evidence, blend a retrieved fact with an invented one, or over-generalise beyond what the passage supports. Worse, bad retrieval can introduce *new* factual errors that a closed-book model would not have made, by handing the generator plausible but irrelevant or outdated passages and implicitly asking it to trust them. RAG changes the shape of the error surface; it does not flatten it.
+
+Latency and cost
+
+Every query now carries a retrieval step — encode the query, search the index, fetch passages — before generation even begins. For large indexes this adds real latency and infrastructure cost that a closed-book model does not incur.
+
+Context-window pressure
+
+The generator can only attend to a bounded amount of retrieved text. Passing more passages improves recall but competes for limited context, and beyond a point extra passages crowd out the useful ones or dilute the model's attention. Choosing k — how many passages to retrieve — is a genuine trade-off, not a free dial.
+
+Stale or inconsistent indexes
+
+The promise that "you just update the index" assumes the index is actually kept current and internally consistent. In practice indexes drift: documents are superseded but not removed, duplicates accumulate, and contradictory sources coexist. The system will then retrieve and present conflicting evidence with no awareness of the conflict.
+
+Weak multi-hop reasoning
+
+Standard RAG retrieves once per query. Questions that require chaining several facts together — multi-hop reasoning — are poorly served, because the single retrieval pass rarely surfaces every link in the chain at once.
+
+Key claims
+
+- RAG's answer quality is upper-bounded by retrieval quality; if retrieval fails, the system falls back to closed-book behaviour.
+- RAG reduces hallucination but does not eliminate it, and bad retrieval can introduce new factual errors not present in a closed-book model.
+- Retrieval adds latency and cost to every query.
+- The generator's context window limits how many passages can be used, making the choice of k a real trade-off.
+- Stale or inconsistent indexes and weak multi-hop reasoning are persistent limitations.
