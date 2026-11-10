@@ -204,13 +204,13 @@ Source documents:
 
 Answer:"""
 
-    response = await client.chat.completions.create(
+    response = await client.messages.create(
         model=model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
         max_tokens=800,
+        # temperature=0.2,
+        messages=[{"role": "user", "content": prompt}],
     )
-    answer = response.choices[0].message.content or ""
+    answer = response.content[0].text if response.content else ""
     return answer, time.time() - t0
 
 
@@ -288,13 +288,13 @@ Answer ({source_type}): {answer[:1000]}{ref_section}
 Respond with ONLY a single number from 0 to 10. No explanation."""
 
     try:
-        response = await client.chat.completions.create(
+        response = await client.messages.create(
             model=model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
             max_tokens=5,
+            # temperature=0.0,
+            messages=[{"role": "user", "content": prompt}],
         )
-        raw = (response.choices[0].message.content or "0").strip()
+        raw = (response.content[0].text if response.content else "0").strip()
         score = float(re.search(r"\d+(?:\.\d+)?", raw).group())
         return min(10.0, max(0.0, score))
     except Exception:
@@ -318,8 +318,14 @@ async def _judge_faithfulness(
     context = ""
     for slug in wiki_pages[:3]:
         slug = slug.removeprefix("wiki/")
-        p = settings.wiki_path / f"{slug}.md"
-        if p.exists():
+        candidates = [settings.wiki_path / f"{slug}.md"]
+        if "/" not in slug:
+            candidates += [
+                settings.wiki_path / sub / f"{slug}.md"
+                for sub in ("concepts", "entities", "sources", "queries")
+            ]
+        p = next((c for c in candidates if c.exists()), None)
+        if p:
             _, body = parse_page(p)
             context += f"\n[{slug}]\n{body[:600]}\n"
 
@@ -337,13 +343,13 @@ Wiki pages:
 Respond with only: YES, PARTIAL, or NO"""
 
     try:
-        response = await client.chat.completions.create(
+        response = await client.messages.create(
             model=model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
             max_tokens=10,
+            # temperature=0.0,
+            messages=[{"role": "user", "content": prompt}],
         )
-        raw = (response.choices[0].message.content or "").strip().upper()
+        raw = (response.content[0].text if response.content else "").strip().upper()
         if "YES" in raw:
             return 1.0
         elif "PARTIAL" in raw:
@@ -401,8 +407,8 @@ async def run_eval(
     test_cases: list[TestCase],
     compare_rag: bool = True,
 ) -> EvalReport:
-    from openai import AsyncOpenAI
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    from anthropic import AsyncAnthropic
+    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     model = settings.llm_model
 
     report = EvalReport(total_questions=len(test_cases))
