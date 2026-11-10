@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncGenerator
 
-from openai import AsyncOpenAI
+from anthropic import AsyncAnthropic, NOT_GIVEN
 
 from config import settings, slugify
 from wiki_manager import (
@@ -56,8 +56,8 @@ class QueryResult:
 
 # ── OpenAI client ──────────────────────────────────────────────────────────────
 
-def _client() -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=settings.openai_api_key)
+def _client() -> AsyncAnthropic:
+    return AsyncAnthropic(api_key=settings.anthropic_api_key)
 
 
 # ── Context builders ───────────────────────────────────────────────────────────
@@ -191,13 +191,14 @@ async def _llm_complete(prompt: str, temperature: float, system: str | None = No
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    response = await client.chat.completions.create(
+    response = await client.messages.create(
         model=settings.llm_model,
-        messages=messages,
-        temperature=temperature,
         max_tokens=settings.max_tokens,
+        # temperature=temperature,
+        system=system if system else NOT_GIVEN,
+        messages=[{"role": "user", "content": prompt}],
     )
-    return response.choices[0].message.content or ""
+    return response.content[0].text if response.content else ""
 
 
 async def _llm_stream(
@@ -208,17 +209,15 @@ async def _llm_stream(
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    stream = await client.chat.completions.create(
+    async with client.messages.stream(
         model=settings.llm_model,
-        messages=messages,
-        temperature=temperature,
         max_tokens=settings.max_tokens,
-        stream=True,
-    )
-    async for chunk in stream:
-        delta = chunk.choices[0].delta.content
-        if delta:
-            yield delta
+        # temperature=temperature,
+        system=system if system else NOT_GIVEN,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        async for text in stream.text_stream:
+            yield text
 
 
 def _parse_json_response(text: str) -> dict:
@@ -431,6 +430,7 @@ async def query_wiki(
 
     result_payload = {
         "question": result.question,
+        "answer": result.answer,
         "pages_consulted": result.pages_consulted,
         "filed_as": result.filed_as,
         "wiki_insufficient": result.wiki_insufficient,
