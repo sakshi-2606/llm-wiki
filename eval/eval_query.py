@@ -214,7 +214,7 @@ Answer:"""
     return answer, time.time() - t0
 
 
-async def _get_wiki_answer(question: str) -> tuple[str, float, bool]:
+async def _get_wiki_answer(question: str) -> tuple[str, float, bool, list[str]]:
     """Answer a question using the compiled wiki pipeline."""
     import json as _json
     t0 = time.time()
@@ -224,15 +224,17 @@ async def _get_wiki_answer(question: str) -> tuple[str, float, bool]:
 
     answer = ""
     wiki_insufficient = False
+    pages_consulted: list[str] = []
 
     async for chunk in query_wiki(question, file_back=False):
         if chunk.startswith("__RESULT__:"):
             result = _json.loads(chunk[11:])
             wiki_insufficient = result.get("wiki_insufficient", False)
+            pages_consulted = result.get("pages_consulted", [])
         elif not chunk.startswith(("🔍", "📖", "💬", "✅", "⚠️", "   ")):
             answer += chunk
 
-    return answer.strip(), time.time() - t0, wiki_insufficient
+    return answer.strip(), time.time() - t0, wiki_insufficient, pages_consulted
 
 
 # ── Citation metrics ───────────────────────────────────────────────────────────
@@ -288,13 +290,13 @@ Answer ({source_type}): {answer[:1000]}{ref_section}
 Respond with ONLY a single number from 0 to 10. No explanation."""
 
     try:
-        response = await client.messages.create(
+        response = await client.chat.completions.create(
             model=model,
-            max_tokens=5,
-            # temperature=0.0,
             messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            max_tokens=5,
         )
-        raw = (response.content[0].text if response.content else "0").strip()
+        raw = (response.choices[0].message.content or "0").strip()
         score = float(re.search(r"\d+(?:\.\d+)?", raw).group())
         return min(10.0, max(0.0, score))
     except Exception:
@@ -343,13 +345,13 @@ Wiki pages:
 Respond with only: YES, PARTIAL, or NO"""
 
     try:
-        response = await client.messages.create(
+        response = await client.chat.completions.create(
             model=model,
-            max_tokens=10,
-            # temperature=0.0,
             messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            max_tokens=10,
         )
-        raw = (response.content[0].text if response.content else "").strip().upper()
+        raw = (response.choices[0].message.content or "").strip().upper()
         if "YES" in raw:
             return 1.0
         elif "PARTIAL" in raw:
@@ -371,7 +373,7 @@ DEFAULT_TEST_CASES = [
     TestCase(
         question="What is the key advantage of RAG over standard language models?",
         type="lookup",
-        expected_concepts=["retrieval-augmented-generation"],
+        expected_concepts=["parametric-vs-non-parametric-memory", "retrieval-augmented-generation"],
     ),
     TestCase(
         question="How does RAG separate parametric and non-parametric memory?",
@@ -381,7 +383,7 @@ DEFAULT_TEST_CASES = [
     TestCase(
         question="Who introduced RAG and when was it published?",
         type="lookup",
-        expected_concepts=["retrieval-augmented-generation"],
+        expected_concepts=["retrieval-quality", "hallucination-in-language-models", "context-window-limitations"],
     ),
     TestCase(
         question="What are the limitations of RAG systems?",
@@ -408,7 +410,12 @@ async def run_eval(
     compare_rag: bool = True,
 ) -> EvalReport:
     from anthropic import AsyncAnthropic
+    from openai import AsyncOpenAI
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    judge_client = AsyncOpenAI(
+        api_key=settings.anthropic_api_key,
+        base_url="https://api.anthropic.com/v1/",
+    )
     model = settings.llm_model
 
     report = EvalReport(total_questions=len(test_cases))
@@ -420,7 +427,7 @@ async def run_eval(
         print(f"  [{i}/{len(test_cases)}] {tc.question[:60]}...")
 
         # Wiki answer
-        wiki_answer, wiki_lat, wiki_insufficient = await _get_wiki_answer(tc.question)
+        wiki_answer, wiki_lat, wiki_insufficient, wiki_pages_consulted = await _get_wiki_answer(tc.question)
 
         # RAG answer (baseline)
         if compare_rag:
@@ -438,15 +445,15 @@ async def run_eval(
 
         if not wiki_insufficient and wiki_answer.strip():
             wiki_score = await _judge_answer(
-                tc.question, wiki_answer, "wiki", tc.reference_answer, client, model
+                tc.question, wiki_answer, "wiki", tc.reference_answer, judge_client, model
             )
             faithfulness = await _judge_faithfulness(
-                wiki_answer, tc.expected_concepts, client, model
+                wiki_answer, wiki_pages_consulted, judge_client, model
             )
 
         if compare_rag and rag_answer.strip():
             rag_score = await _judge_answer(
-                tc.question, rag_answer, "rag", tc.reference_answer, client, model
+                tc.question, rag_answer, "rag", tc.reference_answer, judge_client, model
             )
 
         result = QueryEvalResult(
