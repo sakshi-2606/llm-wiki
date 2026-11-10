@@ -18,14 +18,15 @@ Built on an idea by Andrej Karpathy ([original gist](https://gist.github.com/kar
 | Source changes | Silent drift | SHA-256 staleness detection |
 | Evaluation | Retrieval metrics | Wiki quality + faithfulness |
 
-**Benchmark result** (5 questions, BM25 RAG baseline):
+**Benchmark result** (5 questions, BM25 + Claude RAG baseline, deterministic temp-0 judge):
 
 | Question type | Wiki score | RAG score | Δ |
 |---|---|---|---|
-| Synthesis | 6.5 / 10 | 4.0 / 10 | **+2.5** |
-| Lookup | 7.3 / 10 | 10.0 / 10 | -2.7 |
+| Synthesis | 7.5 / 10 | 7.5 / 10 | ≈ 0 |
+| Lookup | 8.3 / 10 | 9.0 / 10 | -0.7 |
+| Overall | 8.0 / 10 | 8.5 / 10 | -0.5 |
 
-Wiki outperforms BM25 RAG by +2.5 points on synthesis questions requiring multi-source reasoning. RAG wins on simple factual lookups — expected, and acceptable. Citation accuracy: 100% across all queries.
+Against a strong BM25 + Claude RAG baseline, the compiled wiki matches RAG on synthesis questions requiring multi-source reasoning and trails modestly on simple factual lookups — while delivering 100% citation accuracy and 70% answer faithfulness (deterministic temp-0 LLM judge). The wiki's synthesis advantage is expected to widen as the corpus grows and questions require deeper cross-source reasoning; demonstrating that at scale is future work.
 
 ---
 
